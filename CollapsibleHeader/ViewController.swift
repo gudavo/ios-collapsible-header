@@ -11,7 +11,7 @@ import UIKit
 /// Helper for collapsible header on top of a scroll view or a table view
 ///
 /// The header bottom and scroll / table view top must have a size 0 vertical spacing constraint, and helper set as scroll / table view delegate
-class CollapsibleHeaderHelper: NSObject, UITableViewDelegate {
+class CollapsibleHeaderHelper: NSObject, UIScrollViewDelegate {
     
     weak var view: UIView!
     weak var headerHeightConstraint: NSLayoutConstraint!
@@ -49,9 +49,9 @@ class CollapsibleHeaderHelper: NSObject, UITableViewDelegate {
         
         var newHeight = self.headerHeightConstraint.constant
         if scrollDiff > 0 && scrollView.contentOffset.y > absoluteTop {
-            newHeight = max(self.minHeaderHeight, self.headerHeightConstraint.constant - abs(scrollDiff))
+            newHeight = max(self.minHeaderHeight, self.headerHeightConstraint.constant - scrollDiff)
         } else if scrollDiff < 0 && scrollView.contentOffset.y < absoluteBottom {
-            newHeight = min(self.maxHeaderHeight, self.headerHeightConstraint.constant + abs(scrollDiff))
+            newHeight = min(self.maxHeaderHeight, self.headerHeightConstraint.constant - scrollDiff)
         }
         
         if newHeight != self.headerHeightConstraint.constant {
@@ -65,19 +65,9 @@ class CollapsibleHeaderHelper: NSObject, UITableViewDelegate {
         self.previousScrollOffset = scrollView.contentOffset.y
     }
     
-    // MARK: - snap header to max size
+    // MARK: - expand header to max size when scrolls down stops
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        self.scrollDidStop()
-    }
-    
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate {
-            self.scrollDidStop()
-        }
-    }
-    
-    private func scrollDidStop() {
         if self.isHeaderGrowing {
             // expand header
             self.view.layoutIfNeeded()
@@ -88,6 +78,10 @@ class CollapsibleHeaderHelper: NSObject, UITableViewDelegate {
         }
     }
 }
+
+extension CollapsibleHeaderHelper: UITableViewDelegate {}
+
+// MARK: - ViewController
 
 class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
@@ -104,7 +98,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     // MARK: - UITableView Data Source
     
-    let mockData = (0...20).map { (index) in
+    let mockData = (0...200).map { (index) in
         return "Item \(index + 1)"
     }
     
